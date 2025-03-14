@@ -1,0 +1,180 @@
+paths:
+  /webhooks/stripe:
+    post:
+      tags:
+        - Webhooks
+      summary: Handle Stripe webhook events
+      description: Endpoint for receiving and processing Stripe webhook events
+      security: []  # No authentication required for webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Webhook processed successfully
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X POST https://api.devoteme.com/api/webhooks/stripe \
+              -H "Content-Type: application/json" \
+              -H "Stripe-Signature: t=1492774577,v1=5257a869e7ecebeda32affa62cdca3fa51cad7e77a0e56ff536d0ce8e108d8bd" \
+              -d '{
+                "id": "evt_123456789",
+                "object": "event",
+                "api_version": "2020-08-27",
+                "created": 1492774577,
+                "data": {
+                  "object": {
+                    "id": "sub_123456789",
+                    "status": "active"
+                  }
+                },
+                "type": "customer.subscription.created"
+              }'
+
+  /webhooks/paypal:
+    post:
+      tags:
+        - Webhooks
+      summary: Handle PayPal webhook events
+      description: Endpoint for receiving and processing PayPal webhook events
+      security: []  # No authentication required for webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Webhook processed successfully
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /webhooks/mailchimp:
+    post:
+      tags:
+        - Webhooks
+      summary: Handle Mailchimp webhook events
+      description: Endpoint for receiving and processing Mailchimp webhook events
+      security: []  # No authentication required for webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Webhook processed successfully
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /webhooks/twilio:
+    post:
+      tags:
+        - Webhooks
+      summary: Handle Twilio webhook events
+      description: Endpoint for receiving and processing Twilio webhook events
+      security: []  # No authentication required for webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Webhook processed successfully
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /webhooks/cloudinary:
+    post:
+      tags:
+        - Webhooks
+      summary: Handle Cloudinary webhook events
+      description: Endpoint for receiving and processing Cloudinary webhook events
+      security: []  # No authentication required for webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Webhook processed successfully
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+

@@ -1,0 +1,143 @@
+// Add to the User model
+model User {
+  // ... existing fields
+  isEmailVerified      Boolean   @default(false)
+  emailVerificationToken String?
+  emailVerificationTokenExpiry DateTime?
+  identityVerified     Boolean   @default(false)
+  identityVerificationStatus String? @default("NONE") // NONE, PENDING, APPROVED, REJECTED
+  identityDocuments    IdentityDocument[]
+  blockedUsers UserBlock[] @relation("BlockerRelation")
+  blockedBy    UserBlock[] @relation("BlockedRelation")
+  notificationPreference NotificationPreference?
+  activities  UserActivity[]
+  mfaEnabled        Boolean   @default(false)
+  mfaSecret         String?
+  backupCodes       String[]  @default([])
+  oauthClients  OAuthClient[]
+  oauthTokens   OAuthToken[]
+  oauthCodes    OAuthAuthorizationCode[]
+  // ... existing fields
+}
+
+// New model for identity verification
+model IdentityDocument {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // ID_CARD, PASSPORT, DRIVERS_LICENSE
+  documentUrl String
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  rejectionReason String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// Add to the existing schema
+model UserBlock {
+  id          String   @id @default(cuid())
+  blockerId   String
+  blocker     User     @relation("BlockerRelation", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId   String
+  blocked     User     @relation("BlockedRelation", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+// Add to the existing schema
+model NotificationPreference {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailEnabled      Boolean  @default(true)
+  pushEnabled       Boolean  @default(true)
+  inAppEnabled      Boolean  @default(true)
+  newFollower       Boolean  @default(true)
+  newComment        Boolean  @default(true)
+  newLike           Boolean  @default(true)
+  newSubscriber     Boolean  @default(true)
+  newMessage        Boolean  @default(true)
+  contentUpdates    Boolean  @default(true)
+  accountAlerts     Boolean  @default(true)
+  marketingEmails   Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// Add to the existing schema
+model UserActivity {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // LOGIN, LOGOUT, PROFILE_UPDATE, PASSWORD_CHANGE, etc.
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?    // Additional data related to the activity
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// Add to the existing schema
+model OAuthClient {
+  id            String   @id @default(cuid())
+  name          String
+  clientId      String   @unique
+  clientSecret  String
+  redirectUris  String[]
+  grants        String[] // authorization_code, refresh_token, client_credentials
+  scopes        String[] // profile, posts, messages
+  userId        String   // Owner of the client
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  tokens        OAuthToken[]
+
+  @@index([userId])
+  @@index([clientId])
+}
+
+model OAuthToken {
+  id            String   @id @default(cuid())
+  accessToken   String   @unique
+  refreshToken  String?  @unique
+  accessTokenExpiresAt DateTime
+  refreshTokenExpiresAt DateTime?
+  scope         String?
+  clientId      String
+  client        OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([accessToken])
+  @@index([refreshToken])
+  @@index([clientId])
+  @@index([userId])
+}
+
+model OAuthAuthorizationCode {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  expiresAt     DateTime
+  redirectUri   String
+  scope         String?
+  clientId      String
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@index([code])
+  @@index([userId])
+}
+

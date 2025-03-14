@@ -1,0 +1,13 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow private areas
+Disallow: /settings/
+Disallow: /creator/dashboard/
+Disallow: /creator/analytics/
+Disallow: /creator/settings/
+
+# Sitemap
+Sitemap: https://devoteme.com/sitemap.xml
+

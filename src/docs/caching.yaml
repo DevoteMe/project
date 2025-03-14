@@ -1,0 +1,75 @@
+components:
+  headers:
+    Cache-Control:
+      schema:
+        type: string
+      description: Directives for caching mechanisms in both requests and responses
+      example: public, max-age=3600
+    ETag:
+      schema:
+        type: string
+      description: Identifier for a specific version of a resource
+      example: "W/\"a1b2c3d4e5f6\""
+    Last-Modified:
+      schema:
+        type: string
+        format: date-time
+      description: The date and time the resource was last modified
+      example: Wed, 21 Oct 2015 07:28:00 GMT
+    If-None-Match:
+      schema:
+        type: string
+      description: Makes the request conditional, and applies the method only if the stored resource doesn't match any of the given ETags
+      example: "W/\"a1b2c3d4e5f6\""
+    If-Modified-Since:
+      schema:
+        type: string
+        format: date-time
+      description: Makes the request conditional, and expects the resource to be transmitted only if it has been modified after the given date
+      example: Wed, 21 Oct 2015 07:28:00 GMT
+
+paths:
+  /cache-info:
+    get:
+      tags:
+        - System
+      summary: Get caching information
+      description: Retrieve information about the caching mechanisms used by the API
+      responses:
+        '200':
+          description: Caching information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cachingEnabled:
+                    type: boolean
+                    description: Whether caching is enabled
+                    example: true
+                  defaultTTL:
+                    type: integer
+                    description: Default time-to-live for cached items in seconds
+                    example: 3600
+                  supportedMethods:
+                    type: array
+                    items:
+                      type: string
+                      enum: [GET, HEAD]
+                    description: HTTP methods that support caching
+                  cachingStrategies:
+                    type: array
+                    items:
+                      type: string
+                      enum: [ETag, Last-Modified, Cache-Control]
+                    description: Caching strategies supported by the API
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            ETag:
+              $ref: '#/components/headers/ETag'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+

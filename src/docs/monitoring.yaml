@@ -1,0 +1,288 @@
+paths:
+  /monitoring/health:
+    get:
+      tags:
+        - Monitoring
+      summary: Get system health status
+      description: Retrieve the current health status of the system and its components
+      security: []  # Public endpoint for health checks
+      responses:
+        '200':
+          description: System health status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemHealth'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET https://api.devoteme.com/api/monitoring/health
+
+  /monitoring/metrics:
+    get:
+      tags:
+        - Monitoring
+      summary: Get system metrics
+      description: Retrieve detailed system metrics for monitoring purposes
+      parameters:
+        - name: period
+          in: query
+          description: Time period for metrics
+          required: false
+          schema:
+            type: string
+            enum: [1m, 5m, 15m, 1h, 6h, 24h]
+            default: 15m
+      responses:
+        '200':
+          description: System metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: string
+                    description: Time period for the metrics
+                  cpu:
+                    type: object
+                    properties:
+                      current:
+                        type: number
+                        description: Current CPU usage percentage
+                      average:
+                        type: number
+                        description: Average CPU usage percentage
+                      peak:
+                        type: number
+                        description: Peak CPU usage percentage
+                  memory:
+                    type: object
+                    properties:
+                      current:
+                        type: number
+                        description: Current memory usage percentage
+                      average:
+                        type: number
+                        description: Average memory usage percentage
+                      peak:
+                        type: number
+                        description: Peak memory usage percentage
+                  requests:
+                    type: object
+                    properties:
+                      total:
+                        type: number
+                        description: Total number of requests
+                      perSecond:
+                        type: number
+                        description: Average requests per second
+                      byStatusCode:
+                        type: object
+                        additionalProperties:
+                          type: number
+                        description: Count of requests by status code
+                  responseTime:
+                    type: object
+                    properties:
+                      average:
+                        type: number
+                        description: Average response time in milliseconds
+                      p50:
+                        type: number
+                        description: 50th percentile response time
+                      p95:
+                        type: number
+                        description: 95th percentile response time
+                      p99:
+                        type: number
+                        description: 99th percentile response time
+                  database:
+                    type: object
+                    properties:
+                      connections:
+                        type: number
+                        description: Current database connections
+                      queryTime:
+                        type: number
+                        description: Average query time in milliseconds
+                  cache:
+                    type: object
+                    properties:
+                      hitRate:
+                        type: number
+                        description: Cache hit rate percentage
+                      size:
+                        type: number
+                        description: Current cache size in bytes
+                      items:
+                        type: number
+                        description: Number of items in cache
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /monitoring/logs:
+    get:
+      tags:
+        - Monitoring
+      summary: Get system logs
+      description: Retrieve system logs for debugging and monitoring
+      parameters:
+        - name: level
+          in: query
+          description: Minimum log level to retrieve
+          required: false
+          schema:
+            type: string
+            enum: [debug, info, warn, error]
+            default: info
+        - name: limit
+          in: query
+          description: Maximum number of logs to retrieve
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: startTime
+          in: query
+          description: Start time for logs (ISO format)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: endTime
+          in: query
+          description: End time for logs (ISO format)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: service
+          in: query
+          description: Filter logs by service
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: System logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: number
+                    description: Total number of logs matching the criteria
+                  logs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        timestamp:
+                          type: string
+                          format: date-time
+                          description: When the log was created
+                        level:
+                          type: string
+                          enum: [debug, info, warn, error]
+                          description: Log level
+                        service:
+                          type: string
+                          description: Service that generated the log
+                        message:
+                          type: string
+                          description: Log message
+                        metadata:
+                          type: object
+                          description: Additional metadata for the log
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /monitoring/alerts:
+    get:
+      tags:
+        - Monitoring
+      summary: Get system alerts
+      description: Retrieve active and recent system alerts
+      parameters:
+        - name: status
+          in: query
+          description: Filter alerts by status
+          required: false
+          schema:
+            type: string
+            enum: [active, resolved, all]
+            default: active
+        - name: limit
+          in: query
+          description: Maximum number of alerts to retrieve
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: System alerts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: number
+                    description: Total number of alerts matching the criteria
+                  alerts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Alert ID
+                        severity:
+                          type: string
+                          enum: [info, warning, critical]
+                          description: Alert severity
+                        status:
+                          type: string
+                          enum: [active, resolved]
+                          description: Alert status
+                        title:
+                          type: string
+                          description: Alert title
+                        message:
+                          type: string
+                          description: Alert message
+                        service:
+                          type: string
+                          description: Service that triggered the alert
+                        createdAt:
+                          type: string
+                          format: date-time
+                          description: When the alert was created
+                        resolvedAt:
+                          type: string
+                          format: date-time
+                          description: When the alert was resolved (if resolved)
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+

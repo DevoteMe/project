@@ -1,0 +1,235 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  name              String
+  username          String    @unique
+  bio               String?
+  avatar            String?
+  coverImage        String?
+  password          String
+  isVerified        Boolean   @default(false)
+  isCreator         Boolean   @default(false)
+  creatorApplication CreatorApplication?
+  totalRevenue      Float     @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relationships
+  posts             Post[]
+  comments          Comment[]
+  likes             Like[]
+  followers         Follow[]    @relation("Following")
+  following         Follow[]    @relation("Follower")
+  notifications     Notification[]
+  premiumSpots      PremiumSpot[]
+  
+  // Monetization relationships
+  subscriptionTiers SubscriptionTier[]
+  subscriptions     Subscription[]    @relation("Subscriber")
+  subscribers       Subscription[]    @relation("Creator")
+  sentGifts         GiftPurchase[]    @relation("GiftSender")
+  receivedGifts     GiftPurchase[]    @relation("GiftRecipient")
+}
+
+model CreatorApplication {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status          String    @default("pending") // pending, approved, rejected
+  niche           String
+  description     String
+  socialLinks     Json?
+  submittedAt     DateTime  @default(now())
+  reviewedAt      DateTime?
+  reviewNotes     String?
+}
+
+model Post {
+  id              String    @id @default(uuid())
+  title           String
+  content         String
+  type            String    @default("post") // post, image, video, audio, poll
+  published       Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relationships
+  comments        Comment[]
+  likes           Like[]
+  tags            Tag[]     @relation("PostToTag")
+  
+  // Monetization relationships
+  access          ContentAccess?
+}
+
+model Comment {
+  id              String    @id @default(uuid())
+  content         String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId          String
+  post            Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentId        String?
+  parent          Comment?  @relation("CommentToComment", fields: [parentId], references: [id], onDelete: SetNull)
+  replies         Comment[] @relation("CommentToComment")
+}
+
+model Like {
+  id              String    @id @default(uuid())
+  createdAt       DateTime  @default(now())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId          String
+  post            Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, postId])
+}
+
+model Follow {
+  id              String    @id @default(uuid())
+  followerId      String
+  follower        User      @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId     String
+  following       User      @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  
+  @@unique([followerId, followingId])
+}
+
+model Tag {
+  id              String    @id @default(uuid())
+  name            String    @unique
+  posts           Post[]    @relation("PostToTag")
+}
+
+model Notification {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String    // new_follower, new_like, new_comment, new_subscriber, gift_received, etc.
+  title           String
+  message         String
+  data            Json?
+  isRead          Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+}
+
+model PremiumSpot {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category        String
+  startDate       DateTime
+  endDate         DateTime
+  status          String    // active, pending, expired
+  amount          Float
+  paymentId       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Monetization models
+
+model SubscriptionTier {
+  id              String    @id @default(uuid())
+  creatorId       String
+  creator         User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  name            String
+  description     String
+  price           Float
+  billingPeriod   String    // monthly, quarterly, yearly
+  features        String[]
+  color           String?
+  isDefault       Boolean   @default(false)
+  isPublic        Boolean   @default(true)
+  maxSubscribers  Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relationships
+  subscriptions   Subscription[]
+  contentAccess   ContentAccess[] @relation("TierAccess")
+}
+
+model Subscription {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation("Subscriber", fields: [userId], references: [id], onDelete: Cascade)
+  creatorId       String
+  creator         User      @relation("Creator", fields: [creatorId], references: [id], onDelete: Cascade)
+  tierId          String
+  tier            SubscriptionTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  tierName        String
+  startDate       DateTime
+  endDate         DateTime
+  autoRenew       Boolean   @default(true)
+  status          String    // active, canceled, expired, pending
+  price           Float
+  billingPeriod   String    // monthly, quarterly, yearly
+  paymentId       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Gift {
+  id              String    @id @default(uuid())
+  name            String
+  description     String
+  price           Float
+  imageUrl        String
+  category        String    // basic, premium, special
+  isAnimated      Boolean   @default(false)
+  isLimited       Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  availableUntil  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relationships
+  purchases       GiftPurchase[]
+}
+
+model GiftPurchase {
+  id              String    @id @default(uuid())
+  giftId          String
+  gift            Gift      @relation(fields: [giftId], references: [id], onDelete: Cascade)
+  senderId        String
+  sender          User      @relation("GiftSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId     String
+  recipient       User      @relation("GiftRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  contentId       String?
+  message         String?
+  price           Float
+  paymentId       String?
+  createdAt       DateTime  @default(now())
+}
+
+model ContentAccess {
+  id                String    @id @default(uuid())
+  contentId         String    @unique
+  post              Post      @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  accessLevel       String    // public, subscribers, tier-specific
+  allowedTierIds    String[]
+  allowedTiers      SubscriptionTier[] @relation("TierAccess")
+  previewEnabled    Boolean   @default(false)
+  previewPercentage Int?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
